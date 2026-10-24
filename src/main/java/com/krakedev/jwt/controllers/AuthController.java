@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.krakedev.jwt.utils.JwtUtil;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 
 import com.krakedev.jwt.entidades.Usuario;
 import com.krakedev.jwt.services.UsuarioService;
@@ -52,5 +57,33 @@ public class AuthController {
 
 		return ResponseEntity.ok(respuesta);
 	}
+	
+
+@GetMapping("/perfil")
+public ResponseEntity<?> perfil(
+        @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+    if (authorization == null || !authorization.startsWith("Bearer ")) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    try {
+        String token = authorization.substring(7);
+        DecodedJWT jwt = JwtUtil.verificarToken(token);
+
+        String username = jwt.getSubject();
+        String rol = jwt.getClaim("rol").asString();
+
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "Bienvenido " + username);
+        respuesta.put("rol", rol);
+
+        return ResponseEntity.ok(respuesta);
+
+    } catch (JWTVerificationException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+}
+
 
 }
