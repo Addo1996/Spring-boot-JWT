@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.krakedev.jwt.utils.JwtUtil;
 
 import com.krakedev.jwt.entidades.Usuario;
 import com.krakedev.jwt.services.UsuarioService;
@@ -18,38 +19,38 @@ import com.krakedev.jwt.services.UsuarioService;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UsuarioService usuarioService;
+	private final UsuarioService usuarioService;
 
-    public AuthController(UsuarioService usuarioService) {
-        this.usuarioService = usuarioService;
-    }
+	public AuthController(UsuarioService usuarioService) {
+		this.usuarioService = usuarioService;
+	}
 
-    @PostMapping("/registrar")
-    public ResponseEntity<Usuario> registrar(@RequestBody Usuario usuario) {
-        Usuario usuarioGuardado = usuarioService.registrar(usuario);
+	@PostMapping("/registrar")
+	public ResponseEntity<Usuario> registrar(@RequestBody Usuario usuario) {
+		Usuario usuarioGuardado = usuarioService.registrar(usuario);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioGuardado);
-    }
+		return ResponseEntity.status(HttpStatus.CREATED).body(usuarioGuardado);
+	}
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Usuario datos) {
-        Usuario usuario = usuarioService.login(
-                datos.getUsername(),
-                datos.getPassword()
-        );
+	@PostMapping("/login")
+	public ResponseEntity<?> login(@RequestBody Usuario datos) {
+		Usuario usuario = usuarioService.login(datos.getUsername(), datos.getPassword());
 
-        if (usuario == null) {
-            Map<String, String> respuesta = new HashMap<>();
-            respuesta.put("mensaje", "Usuario o contraseña incorrectos");
+		if (usuario == null) {
+			Map<String, String> respuesta = new HashMap<>();
+			respuesta.put("mensaje", "Usuario o contraseña incorrectos");
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(respuesta);
-        }
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(respuesta);
+		}
 
-        Map<String, String> respuesta = new HashMap<>();
-        respuesta.put("mensaje", "Inicio de sesión exitoso");
-        respuesta.put("username", usuario.getUsername());
-        respuesta.put("rol", usuario.getRol());
+		String token = JwtUtil.generarToken(usuario.getUsername(), usuario.getRol());
 
-        return ResponseEntity.ok(respuesta);
-    }
+		Map<String, String> respuesta = new HashMap<>();
+		respuesta.put("token", token);
+		respuesta.put("username", usuario.getUsername());
+		respuesta.put("rol", usuario.getRol());
+
+		return ResponseEntity.ok(respuesta);
+	}
+
 }
